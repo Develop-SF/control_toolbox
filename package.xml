@@ -26,6 +26,7 @@
   <depend>filters</depend>
   <depend>generate_parameter_library</depend>
   <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rcutils</depend>

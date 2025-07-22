@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "filters/filter_base.hpp"
 #include "geometry_msgs/msg/wrench_stamped.hpp"
@@ -24,8 +25,7 @@
 #include "control_toolbox/low_pass_filter.hpp"
 #include "control_toolbox/low_pass_filter_parameters.hpp"
 
-namespace control_filters
-{
+namespace control_filters {
 
 /***************************************************/
 /*! \class LowPassFilter
@@ -71,9 +71,7 @@ namespace control_filters
 */
 /***************************************************/
 
-template <typename T>
-class LowPassFilter : public filters::FilterBase<T>
-{
+template <typename T> class LowPassFilter : public filters::FilterBase<T> {
 public:
   /*!
    * \brief Configure the LowPassFilter (access and process params).
@@ -88,7 +86,7 @@ public:
    *
    * \returns false if filter is not configured, true otherwise
    */
-  bool update(const T & data_in, T & data_out) override;
+  bool update(const T &data_in, T &data_out) override;
 
 private:
   std::shared_ptr<rclcpp::Logger> logger_;
@@ -97,85 +95,72 @@ private:
   std::shared_ptr<control_toolbox::LowPassFilter<T>> lpf_;
 };
 
-template <typename T>
-bool LowPassFilter<T>::configure()
-{
-  logger_.reset(
-    new rclcpp::Logger(this->logging_interface_->get_logger().get_child(this->filter_name_)));
+template <typename T> bool LowPassFilter<T>::configure() {
+  logger_.reset(new rclcpp::Logger(
+      this->logging_interface_->get_logger().get_child(this->filter_name_)));
 
   // Initialize the parameters once
-  if (!parameter_handler_)
-  {
-    try
-    {
-      parameter_handler_ =
-        std::make_shared<low_pass_filter::ParamListener>(this->params_interface_,
-                                                         this->param_prefix_);
-    }
-    catch (const std::exception & ex) {
+  if (!parameter_handler_) {
+    try {
+      parameter_handler_ = std::make_shared<low_pass_filter::ParamListener>(
+          this->params_interface_, this->param_prefix_);
+    } catch (const std::exception &ex) {
       RCLCPP_ERROR((*logger_),
-        "LowPass filter cannot be configured: %s (type : %s)", ex.what(), typeid(ex).name());
+                   "LowPass filter cannot be configured: %s (type : %s)",
+                   ex.what(), typeid(ex).name());
       parameter_handler_.reset();
       return false;
-    }
-    catch (...) {
-      RCLCPP_ERROR((*logger_), "Caught unknown exception while configuring LowPass filter");
+    } catch (...) {
+      RCLCPP_ERROR((*logger_),
+                   "Caught unknown exception while configuring LowPass filter");
       parameter_handler_.reset();
       return false;
     }
   }
   parameters_ = parameter_handler_->get_params();
   lpf_ = std::make_shared<control_toolbox::LowPassFilter<T>>(
-    parameters_.sampling_frequency,
-    parameters_.damping_frequency,
-    parameters_.damping_intensity);
+      parameters_.sampling_frequency, parameters_.damping_frequency,
+      parameters_.damping_intensity);
 
   return lpf_->configure();
 }
 
 template <>
-inline bool LowPassFilter<geometry_msgs::msg::WrenchStamped>::update(
-  const geometry_msgs::msg::WrenchStamped & data_in, geometry_msgs::msg::WrenchStamped & data_out)
-{
-  if (!this->configured_ || !lpf_ || !lpf_->is_configured())
-  {
+inline bool
+LowPassFilter<std::vector<double>>::update(const std::vector<double> &data_in,
+                                           std::vector<double> &data_out) {
+  if (!this->configured_ || !lpf_ || !lpf_->is_configured()) {
     throw std::runtime_error("Filter is not configured");
   }
 
   // Update internal parameters if required
-  if (parameter_handler_->is_old(parameters_))
-  {
+  if (parameter_handler_->is_old(parameters_)) {
     parameters_ = parameter_handler_->get_params();
-    lpf_->set_params(
-      parameters_.sampling_frequency,
-      parameters_.damping_frequency,
-      parameters_.damping_intensity);
+    lpf_->set_params(parameters_.sampling_frequency,
+                     parameters_.damping_frequency,
+                     parameters_.damping_intensity);
   }
 
   return lpf_->update(data_in, data_out);
 }
 
 template <typename T>
-bool LowPassFilter<T>::update(const T & data_in, T & data_out)
-{
-  if (!this->configured_ || !lpf_ || !lpf_->is_configured())
-  {
+bool LowPassFilter<T>::update(const T &data_in, T &data_out) {
+  if (!this->configured_ || !lpf_ || !lpf_->is_configured()) {
     throw std::runtime_error("Filter is not configured");
   }
 
   // Update internal parameters if required
-  if (parameter_handler_->is_old(parameters_))
-  {
+  if (parameter_handler_->is_old(parameters_)) {
     parameters_ = parameter_handler_->get_params();
-    lpf_->set_params(
-      parameters_.sampling_frequency,
-      parameters_.damping_frequency,
-      parameters_.damping_intensity);
+    lpf_->set_params(parameters_.sampling_frequency,
+                     parameters_.damping_frequency,
+                     parameters_.damping_intensity);
   }
 
   return lpf_->update(data_in, data_out);
 }
 
-}  // namespace control_filters
+} // namespace control_filters
 
-#endif  // CONTROL_FILTERS__LOW_PASS_FILTER_HPP_
+#endif // CONTROL_FILTERS__LOW_PASS_FILTER_HPP_

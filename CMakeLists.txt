@@ -57,6 +57,7 @@ set(CONTROL_FILTERS_INCLUDE_DEPENDS
   generate_parameter_library
   pluginlib
   geometry_msgs
+  sensor_msgs
 )
 foreach(Dependency IN ITEMS ${CONTROL_FILTERS_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
